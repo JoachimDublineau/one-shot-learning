@@ -56,9 +56,9 @@ def plot_history(history, with_val = False):
   plt.ylabel('Loss')
   plt.legend()
 
-  acc = history_dict['accuracy']
+  acc = history_dict['acc']
   if with_val:
-    val_acc = history_dict['val_accuracy']
+    val_acc = history_dict['val_acc']
   plt.subplot(1,2,2)
   plt.plot(epochs, acc, label='Training acc')
   if with_val:
@@ -73,18 +73,19 @@ def plot_history(history, with_val = False):
 def get_dense_model():
   model = Sequential()
   model.add(Reshape((28*28,)))
-  model.add(Dense(512, input_shape=(None, 28*28), activation = 'relu', use_bias=True))
-  model.add(Dense(256, activation = 'relu', use_bias=True))
-  model.add(Dense(3, activation = 'relu'))
+  model.add(Dense(128, input_shape=(None, 28*28), activation = 'relu', use_bias=True))
+  model.add(Dense(128, activation = 'relu', use_bias=True))
+  model.add(Dense(2, activation = 'relu'))
   model.add(Dense(10, activation = 'softmax'))
 
   model.compile(loss = 'categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
   return model
 
-def train_model(model, x_train, y_train):
+def train_model(model, x_train, y_train, x_val, y_val):
   epochs = 20
-  y_train_cato = to_categorical(y_train,10)
-  history = model.fit(x_train, y_train_cato, verbose=1, batch_size=64,  epochs=epochs)
+  y_train_cato = to_categorical(y_train, 10)
+  y_val_cato = to_categorical(y_val,10)
+  history = model.fit(x_train, y_train_cato, verbose=1, batch_size=64,  epochs=epochs, validation_data=(x_val, y_val_cato))
   plot_history(history)
   return model
 
@@ -117,29 +118,35 @@ def plot_scatter3d_cato(features, labels, list_active_labels):
 
 def scatter_all(features, labels):
   plt.scatter(features[:,0], features[:,1], c=labels)
+  plt.colorbar(ticks=range(10))
   plt.show()
 
 def scatter3d_all(features, labels):
   fig = plt.figure()
   ax = Axes3D(fig)
   ax.scatter(features[:,0], features[:,1], features[:,2], c=labels)
+  plt.colorbar(ticks=range(10))
   plt.show()
 
 
-if __name__ == '__main__':
-    # get data
-    x_train, y_train, x_test, y_test = prepare_data()
-    x_train_04, y_train_04, x_train_59, y_train_59 = prepare_partial_data(x_train, y_train)
-    # get and train model
-    model = get_dense_model()
-    model = train_model(model, x_train_04, y_train_04)
-    # model evaluation
-    y_test_cato = to_categorical(y_test)
-    print(model.evaluate(x_test, y_test_cato))
-    # plot features
-    f_model = get_feature_model(model)
-    features = get_feature(f_model, x_train)
-    scatter3d_all(features, y_train)
-    features = get_feature(f_model, x_train_04)
-    scatter3d_all(features, y_train_04)
-    
+# get data
+x_train, y_train, x_test, y_test = prepare_data()
+x_train_04, y_train_04, x_train_59, y_train_59 = prepare_partial_data(x_train, y_train)
+x_test_04, y_test_04, x_test_59, y_test_59 = prepare_partial_data(x_test, y_test)
+
+x_04_val = x_train_04[:5000]
+x_train_04 = x_train_04[5000:]
+y_04_val = y_train_04[:5000]
+y_train_04 = y_train_04[5000:]
+
+# get and train model
+model = get_dense_model()
+model = train_model(model, x_train_04, y_train_04, x_04_val, y_04_val)
+# model evaluation
+y_test_cato = to_categorical(y_test_04, 10)
+print(model.evaluate(x_test_04, y_test_cato))
+# plot features
+f_model = get_feature_model(model)
+features = get_feature(f_model, x_test_04)
+scatter_all(features, y_test_04)
+
