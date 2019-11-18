@@ -5,7 +5,7 @@ Created on Sun Nov 17 22:52:23 2019
 @author: Joachim Dublineau
 """
 # Importations:
-%tensorflow_version 1.x
+from __future__ import print_function
 from keras.datasets import cifar10
 from keras.utils import np_utils
 from keras.models import Model, Sequential, load_model
@@ -15,10 +15,8 @@ from keras.layers import Input, Conv2D, MaxPooling2D, Dense, Dropout, Activation
 Flatten, Conv3D, MaxPooling3D
 import matplotlib.pyplot as plt
 import numpy as np
-from __future__ import print_function
 import time
 import pandas as pd
-from sklearn.datasets import fetch_mldata
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from mpl_toolkits.mplot3d import Axes3D
@@ -139,7 +137,7 @@ model.add(Dropout(0.5))
 model.add(Dense(num_classes))
 model.add(Activation('softmax'))
 
-model_name = "model4.h5"
+model_name = "test1.h5"
 
 # # Training on whole dataset
 
@@ -166,7 +164,7 @@ model_name = "model4.h5"
 
 # model.save(model_name)
 
-model = load_model(path_in_the_drive + model_name)
+model = load_model(model_name)
 
 print(model.summary())
 
