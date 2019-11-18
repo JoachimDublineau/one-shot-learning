@@ -137,7 +137,7 @@ model.add(Dropout(0.5))
 model.add(Dense(num_classes))
 model.add(Activation('softmax'))
 
-model_name = "test1.h5"
+model_name = "test2.h5"
 
 # # Training on whole dataset
 
@@ -294,6 +294,10 @@ def compute_nearest_neighbor(vector, data_set):
 
 # Prediction evaluation on new classes:
   
+# Tests:
+confusion_matrix = np.zeros((10-num_classes, 10 - num_classes), dtype = int)
+# ligne : prediction
+# colonne : reference
 nb_of_different_references = 100
 accuracies = np.zeros((10-num_classes, nb_of_different_references))
 for p in range(nb_of_different_references):
@@ -305,6 +309,7 @@ for p in range(nb_of_different_references):
     for elem in results_per_class[i,:]:
       if k != index_ref:
         index = compute_nearest_neighbor(elem, references)
+        confusion_matrix[index, i] += 1
         if index != i:
           nb_mistakes += 1
       k += 1
@@ -312,3 +317,5 @@ for p in range(nb_of_different_references):
 for num_class in range(10-num_classes):
   print("Class n°", num_class+num_classes,"accuracy:", 
         np.mean(accuracies[num_class,:]))
+print("Confusion Matrix:")
+print(confusion_matrix)
