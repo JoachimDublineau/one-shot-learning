@@ -38,13 +38,14 @@ for img in images:
     
     # Ploting image:
 
-    plt.imshow(img)
-    plt.show()
+#    plt.imshow(img)
+#    plt.show()
     
     # Test with entropy calculation:
     entropy0 = entropy(img[:,:,0], disk(10))
     plt.imshow(entropy0)
     plt.show()
+    print(np.mean(entropy0))
 #    entropy1 = entropy(img[:,:,1], disk(10))
 #    plt.imshow(entropy1)
 #    plt.show()
@@ -52,9 +53,13 @@ for img in images:
 #    plt.imshow(entropy2)
 #    plt.show()
 
-    print(entropy_full(np.reshape(img, -1)))
+    #print(entropy_full(np.reshape(img, -1)))
 
 """genre potentiellement, je peux faire après cette image d'entropy, 
 un calcul d'objet en mode délimitation de zone à forte entropie,
 ca me donne une idée du nombre d'objet et de leur taille donc je 
 peux choisir la taille de ma fenetre"""
+
+"""pour l'instant on part sur un calcul de seuil basé sur la première entropie
+calculée."""
+
