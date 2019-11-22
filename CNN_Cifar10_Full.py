@@ -8,6 +8,7 @@ Created on Sun Nov 17 22:52:23 2019
 from __future__ import print_function
 from keras.datasets import cifar10
 from keras.utils import np_utils
+from keras.utils.vis_utils import plot_model
 from keras.models import Model, Sequential, load_model
 from keras import regularizers
 from keras.optimizers import RMSprop, Adam
@@ -32,10 +33,15 @@ x_test /= 255.
 
 # Learning params:
 
-num_classes = 6
+num_classes = 5
 learning_rate = 0.0001
 batch_size = 32    
 num_epochs = 20 
+train_num_list = list(range(num_classes))
+val_num_list = list(range(num_classes))
+test_num_list = list(range(num_classes))
+all_num_list = list(range(10))
+
 
 # Extraction of the train data with num_classes != 10:
 
@@ -74,6 +80,7 @@ y_train_bis = np_utils.to_categorical(y_train_bis, num_classes) # One-hot encode
 y_test_bis = np_utils.to_categorical(y_test_bis, num_classes)
 y_train_bis = y_train_bis.astype('int')
 y_test_bis = y_test_bis.astype('int')
+
 
 # --------------------------------------
 # CNN network definition 
@@ -140,60 +147,17 @@ y_test_bis = y_test_bis.astype('int')
 #
 #model_name = "test2.h5"
 
-# --------------------------------------
-# Siamese CNN network definition 
-# --------------------------------------
-def get_siamese_model(input_shape, distance = 'l1'):
-    
-  left_input = Input(input_shape, name='input1')
-  right_input = Input(input_shape, name='input2')
+# Training on whole dataset
 
-  model = Sequential()
-  model.add(Conv2D(64, (3, 3), kernel_regularizer=regularizers.l2(0.0001), 
-                   border_mode='same', activation="relu", 
-                   input_shape=input_shape))
-  model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', 
-                         data_format=None))
-  model.add(Dropout(0.5))
-  model.add(Conv2D(64, 3, 3, kernel_regularizer=regularizers.l2(0.0001), 
-                   border_mode='same', activation="relu")) 
-  model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid',
-                         data_format=None))
-  model.add(Dropout(0.3))
-  model.add(Flatten())
-  model.add(Dense(2, activation='relu'))
-
-  encoded_l = model(left_input)
-  encoded_r = model(right_input)
-
-  if distance == 'l1':
-    L1_layer = Lambda(lambda tensors:K.abs(tensors[0] - tensors[1]))
-    L1_distance = L1_layer([encoded_l, encoded_r])
-    prediction = Dense(1,activation='sigmoid')(L1_distance)
-
-    siamese_net = Model(inputs=[left_input,right_input],outputs=prediction)
-
-  else:
-    distance = Lambda(euclidean_distance,
-                  output_shape=eucl_dist_output_shape)([encoded_l, encoded_r])
-
-    siamese_net = Model([left_input,right_input], distance)
-  return siamese_net
-
-model = get_siamese_model((32,32,1))
-print(model.summary())
-
-# # Training on whole dataset
-
-# opt = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, amsgrad=False)
-# #opt = RMSprop(lr=learning_rate,decay=1e-6)
-
-# model.compile(loss='categorical_crossentropy', 
-#                optimizer=opt, metrics=['accuracy'])
-# history = model.fit(x_train_bis, y_train_bis, verbose = True, 
-#                     epochs = num_epochs, batch_size=batch_size,
-#                     validation_split=0.2, shuffle = True)
-
+#opt = Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, amsgrad=False)
+##opt = RMSprop(lr=learning_rate,decay=1e-6)
+#
+#model.compile(loss='categorical_crossentropy', 
+#               optimizer=opt, metrics=['accuracy'])
+#history = model.fit(x_train_bis, y_train_bis, verbose = True, 
+#                    epochs = num_epochs, batch_size=batch_size,
+#                    validation_split=0.2, shuffle = True)
+#
 ## Ploting the loss evolution during training
 #loss = history.history["loss"]
 #val_loss = history.history["val_loss"]
@@ -205,8 +169,198 @@ print(model.summary())
 #plt.ylabel("Loss")
 #plt.legend()
 #plt.show()
+#
+#model.save(model_name)
 
-# model.save(model_name)
+# --------------------------------------
+# Siamese CNN network definition 
+# --------------------------------------
+
+def get_siamese_model(input_shape, distance = 'l1'):
+   
+  # Network params
+      
+  conv_depth_1 = 100
+  kernel_size_1 = 3
+  
+  conv_depth_2 = 100 
+  kernel_size_2 = 3
+  pool_size_2 = 2
+    
+  conv_depth_3 = 200 
+  kernel_size_3 = 3
+    
+  conv_depth_4 = 200 
+  kernel_size_4 = 3
+    
+  conv_depth_5 = 400 
+  kernel_size_5 = 3
+  pool_size_5 = 2
+    
+  hidden_size_1 = 600
+    
+  weight_penalty = 0.0001 
+  
+  left_input = Input(input_shape, name='input1')
+  right_input = Input(input_shape, name='input2')
+
+  model = Sequential(name = "CNN_embedded")
+  model.add(Conv2D(conv_depth_1, (kernel_size_1, kernel_size_1), 
+                   padding='same',
+                   input_shape=input_shape))
+  model.add(Activation('relu'))
+  model.add(Conv2D(conv_depth_2, (kernel_size_2, kernel_size_2), 
+                   padding='same'))
+  model.add(Activation('relu'))
+  model.add(MaxPooling2D(pool_size=(pool_size_2, pool_size_2)))
+  model.add(Dropout(0.3))
+
+  model.add(Conv2D(conv_depth_3, (kernel_size_3, kernel_size_3), 
+                   padding='same', 
+                   kernel_regularizer=regularizers.l2(weight_penalty)))
+  model.add(Activation('relu'))
+    
+  model.add(Conv2D(conv_depth_4, (kernel_size_4, kernel_size_4), 
+                   padding='same',
+                   kernel_regularizer=regularizers.l2(weight_penalty)))
+  model.add(Activation('relu'))
+    
+  model.add(Conv2D(conv_depth_5, (kernel_size_5, kernel_size_5), 
+                   padding='same', 
+                   kernel_regularizer=regularizers.l2(weight_penalty)))
+  model.add(Activation('relu'))
+  model.add(MaxPooling2D(pool_size=(pool_size_5, pool_size_5)))
+  model.add(Dropout(0.3))
+  
+  model.add(Flatten())
+  model.add(Dropout(0.5))
+  model.add(Dense(hidden_size_1, 
+                  kernel_regularizer=regularizers.l2(weight_penalty)))
+  model.add(Activation('relu'))
+  model.add(Dropout(0.5))
+    
+  model.add(Dense(num_classes))
+  model.add(Activation('softmax'))
+  
+  print(model.summary())
+
+  encoded_l = model(left_input)
+  encoded_r = model(right_input)
+
+  if distance == 'l1':
+    L1_layer = Lambda(lambda tensors:K.abs(tensors[0] - tensors[1]))
+    L1_distance = L1_layer([encoded_l, encoded_r])
+    prediction = Dense(1,activation='sigmoid')(L1_distance)
+
+    siamese_net = Model(inputs=[left_input,right_input],outputs=prediction,
+                        name = "Siamese_CNN")
+
+  else:
+    distance = Lambda(euclidean_distance,
+                      output_shape=eucl_dist_output_shape)([encoded_l, 
+                                                         encoded_r])
+
+    siamese_net = Model([left_input,right_input], distance, name="Siamese_CNN")
+  return siamese_net
+
+class Data_Cifar_10:
+  def __init__(self):
+    self.prepare_data()
+    self.group_data()
+
+  def prepare_data(self):
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+    self.img_rows = x_train.shape[1]
+    self.img_cols = x_train.shape[2]
+    self.input_shape = (self.img_rows, self.img_cols,1)
+
+    x_train = x_train.reshape(-1, self.img_rows, self.img_cols, 1)
+    x_test = x_test.reshape(-1, self.img_rows, self.img_cols, 1)
+    x_train = x_train.astype("float32")
+    x_test = x_test.astype("float32")
+    x_train /= 255.
+    x_test /= 255.
+    self.x_train = x_train
+    self.x_test = x_test
+    self.y_train = y_train
+    self.y_test = y_test
+
+  def group_data(self):
+    self.grouped_data = {}
+    self.grouped_test_data = {}
+    for i in range(10):
+      self.grouped_data[i] = self.x_train[self.y_train==i]
+      self.grouped_test_data[i] = self.x_test[self.y_test==i]
+
+  def get_batch(self, num_list, flag='train'):
+    target = []
+    batch = []
+    if flag  == 'train':
+      data_ = self.grouped_data
+    else:
+      data_ = self.grouped_test_data
+    num_example = min([data_[i].shape[0] for i in num_list])
+
+    for i in range(num_example):
+      i1,i2 = np.random.choice(num_list,2, replace=False)
+      i_index = np.random.choice(num_example,4, replace=False)
+      batch += [[data_[i1][i_index[0]], data_[i1][i_index[1]]]]
+      batch += [[data_[i1][i_index[2]], data_[i2][i_index[3]]]]
+      target.append(1)
+      target.append(0)
+    return np.array(batch), np.array(target)
+
+  def get_test_batch(self, test_size, test_target, categ_target, k=10):#k-way one shot learning
+    batch = [np.zeros((test_size*k, self.img_rows, self.img_cols,1)) for i in range(2)]
+    # batch = []
+    target = [] # index of correct category
+    num_list = test_target
+    categ_list = categ_target
+    data_ = self.grouped_data
+    for i in range(test_size):
+      i1 = np.random.choice(num_list)
+      i1_index = np.random.choice(data_[i1].shape[0])
+      batch[0][i*k:i*k+k,:] = np.repeat(data_[i1][i1_index][np.newaxis,:], k, axis=0)
+      target.append(i1)
+      for k_i in range(k):
+        i2_index = np.random.choice(data_[categ_list[k_i]].shape[0])
+        batch[1][i*k+k_i,:] = data_[categ_list[k_i]][i2_index]
+        while categ_list[k_i]==i1 and i2_index == i1_index:
+          i2_index = np.random.choice(data_[categ_list[k_i]].shape[0])
+          batch[1][i*k+k_i,:] = data_[categ_list[k_i]][i2_index]
+      
+    return batch, target
+model = get_siamese_model((32,32,1))
+print(model.summary())
+model_name = "SiameseCNN_Cifar.h5"
+
+data = Data_Cifar_10()
+batch, targets = data.get_batch(train_num_list, 'train')
+val_batch, val_targets = data.get_batch(val_num_list, 'val')
+input_shape = data.input_shape
+
+rms = RMSprop()
+model.compile(loss='contrastive_loss', optimizer=rms, metrics=['accuracy'])
+plot_model(model, show_shapes=True, show_layer_names=True)
+
+history = model.fit([batch[:, 0], batch[:, 1]], targets,batch_size=batch_size,
+                    epochs=num_epochs, 
+                    validation_data=([val_batch[:, 0],val_batch[:, 1]], 
+                    val_targets))
+
+# Ploting the loss evolution during training
+loss = history.history["loss"]
+val_loss = history.history["val_loss"]
+epochs = range(1, len(loss) + 1)
+plt.plot(epochs, loss, "bo", label="Training loss")
+plt.plot(epochs, val_loss, "b", label="Validation loss")
+plt.title("Training and validation loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
+
+## Loading the model:
 
 #model = load_model(model_name)
 #
