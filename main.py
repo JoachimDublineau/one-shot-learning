@@ -4,7 +4,7 @@ Created on Sun Nov 24 13:30:13 2019
 
 @author: Joachim Dublineau
 """
-
+from Siamses_CNN_MNIST import test_model_MNIST
 from Siamese_CNN_Cifar import test_model_Cifar
 from CNN_Cifar10_Full import test_CNN_model_Cifar
 from keras.datasets import cifar10
@@ -12,7 +12,6 @@ import numpy as np
 from keras.utils import np_utils
 
 num_classes = 5
-model_name = "SiameseCNN_Cifar.h5"
 
 def load_cifar_10(num_classes):
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -57,11 +56,17 @@ def load_cifar_10(num_classes):
     y_test_bis = y_test_bis.astype('int')
     return x_train_bis, y_train_bis, x_test_bis, y_test_bis, x_other, y_other 
 
+model_name = "Siamese_on_MNIST.h5"
+test_model_MNIST(model_name, training = False)
+
 x_train_bis, y_train_bis, x_test_bis, y_test_bis, x_other, y_other = \
 load_cifar_10(num_classes)
 
+model_name = "official_CNN_on_Cifar.h5"
 test_CNN_model_Cifar(num_classes, model_name, x_train_bis, y_train_bis,
                      x_test_bis, y_test_bis, x_other, y_other, 
                      training = False, plot = True)
+
+model_name = "SiameseCNN_Cifar.h5"
 test_model_Cifar(num_classes, model_name, x_other, y_other, 
                      training = False, plot = True)
