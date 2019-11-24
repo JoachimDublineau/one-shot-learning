@@ -65,8 +65,8 @@ load_cifar_10(num_classes)
 model_name = "official_CNN_on_Cifar.h5"
 test_CNN_model_Cifar(num_classes, model_name, x_train_bis, y_train_bis,
                      x_test_bis, y_test_bis, x_other, y_other, 
-                     training = False, plot = True)
+                     training = False, plot = False)
 
 model_name = "SiameseCNN_Cifar.h5"
 test_model_Cifar(num_classes, model_name, x_other, y_other, 
-                     training = False, plot = True)
+                     training = False, plot = False)
