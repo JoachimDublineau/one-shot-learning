@@ -5,7 +5,8 @@ Created on Sun Nov 24 13:30:13 2019
 @author: Joachim Dublineau
 """
 
-from Siamese_CNN_Cifar import test_model_cifar
+from Siamese_CNN_Cifar import test_model_Cifar
+from CNN_Cifar10_Full import test_CNN_model_Cifar
 from keras.datasets import cifar10
 import numpy as np
 from keras.utils import np_utils
@@ -59,5 +60,8 @@ def load_cifar_10(num_classes):
 x_train_bis, y_train_bis, x_test_bis, y_test_bis, x_other, y_other = \
 load_cifar_10(num_classes)
 
-test_model_cifar(num_classes, model_name, x_other, y_other, 
+test_CNN_model_Cifar(num_classes, model_name, x_train_bis, y_train_bis,
+                     x_test_bis, y_test_bis, x_other, y_other, 
+                     training = False, plot = True)
+test_model_Cifar(num_classes, model_name, x_other, y_other, 
                      training = False, plot = True)
