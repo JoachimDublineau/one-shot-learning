@@ -297,4 +297,4 @@ def test_model_MNIST(model_name, training = False):
         
     get_model_performance(model, batch, targets, val_batch, val_targets)
     print("Performance on one shot:")
-    get_one_shot_performance(model, data, distance)
+    print(get_one_shot_performance(model, data, distance))
