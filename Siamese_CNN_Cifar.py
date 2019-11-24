@@ -14,6 +14,7 @@ from keras.optimizers import RMSprop, Adam
 from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from keras.utils import np_utils
+import random as rd
 import time
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -324,7 +325,7 @@ def test_model_Cifar(num_classes, model_name, x_other, y_other,
     # methods:
     if plot:
         print("Ploting results with PCA and TSNE...")
-        N = 4000
+        N = 3000
         feat_cols = [ 'index'+str(i) for i in range(results.shape[1]) ]
         df = pd.DataFrame(results,columns=feat_cols)
         df['y'] = y_other
@@ -371,6 +372,7 @@ def test_model_Cifar(num_classes, model_name, x_other, y_other,
            x="tsne-2d-one", y="tsne-2d-two",hue="y",
            palette=sns.color_palette("hls", 10-num_classes),
            data=df_subset, legend="full", alpha=0.3)
+        plt.show()
         print("Done.")
         
     # Prediction evaluation on new classes:
@@ -402,4 +404,34 @@ def test_model_Cifar(num_classes, model_name, x_other, y_other,
            np.mean(accuracies[num_class,:]))
     print("Confusion Matrix:")
     print(confusion_matrix)
+    print("Done.")
+    
+    print("Computing the confusion matrix for 3-shots learning on 100 different references...")
+    confusion_matrix = np.zeros((10-num_classes, 10 - num_classes), dtype = int)
+    # ligne : prediction
+    # colonne : reference
+    nb_of_different_references = 100
+    accuracies = np.zeros((10-num_classes, nb_of_different_references))
+    for p in range(nb_of_different_references):
+      index_ref = rd.randint(0, nb_examples-3)
+      references = results_per_class[:,index_ref] + results_per_class[:, index_ref +1 ] + \
+      results_per_class[:,index_ref+2]
+      references /= 3
+      for i in range(10-num_classes):
+        nb_mistakes = 0
+        k = 0
+        for elem in results_per_class[i,:]:
+          if k != index_ref:
+            index = compute_nearest_neighbor(elem, references)
+            confusion_matrix[index, i] += 1
+            if index != i:
+              nb_mistakes += 1
+          k += 1
+        accuracies[i, p] = 1 - nb_mistakes/(nb_examples-1)  
+    for num_class in range(10-num_classes):
+      print("Class n°", num_class+num_classes,"accuracy:", 
+            np.mean(accuracies[num_class,:]))
+    print("Confusion Matrix:")
+    print(confusion_matrix)
+    
     print("Done. End Testing.")
